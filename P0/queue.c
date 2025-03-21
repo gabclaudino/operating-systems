@@ -55,8 +55,8 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
     // var para percorrer a fila
     queue_t *current = queue;
 
-    // chama print_elem para cada elemtno
-    // vai atualizando ate chegar no comeco
+    // chama print_elem para cada elemento
+    // vai atualizando ate voltar para o comeco
     do{
         print_elem((void *)current);
         current = current -> next;
