@@ -15,14 +15,6 @@ GRR: 20215730
 
 // #define DEBUG // desmarcar para poder usar
 
-// tamanho da pilha de cada tarefa
-#define STACKSIZE 64 * 1024
-
-// estados das tarefas
-#define TASK_READY     0
-#define TASK_RUNNING   1
-#define TASK_TERMINATED 2
-
 // variaveis globais
 
 task_t main_task;              // descritor da tarefa main
@@ -32,9 +24,43 @@ task_t *ready_queue = NULL;    // fila de tarefas prontas
 int next_task_id = 0;          // prox ID disponivel
 int user_tasks = 0;            // numero de tarefas de usuario ativas
 
-// seleciona a proxima tarefa (FCFS)
-task_t* scheduler() {
-    return ready_queue;
+// seleciona a proxima tarefa
+task_t *scheduler() {
+    // se a fila estiver vazia, retorna NULL
+    if (!ready_queue)
+        return NULL;
+
+    // comeca com a primeira da fila
+    task_t *selected = ready_queue;
+
+    // ponteiro para percorrer a fila
+    task_t *aux = ready_queue->next;
+
+    // percorre a fila de tarefas prontas
+    do {
+        // seleciona aquela com menor valor (mais prio)
+        if (aux->dynamic_prio < selected->dynamic_prio)
+            selected = aux;
+        aux = aux->next;
+    } while (aux != ready_queue);
+
+    // aplica o aging nas outras tarefas da fila
+    aux = ready_queue;
+    do {
+        if (aux != selected)
+            aux->dynamic_prio--;
+        aux = aux->next;
+    } while (aux != ready_queue);
+
+    // reseta a prioridade dinamica da tarefa selecionada
+    selected->dynamic_prio = selected->static_prio;
+
+    #ifdef DEBUG
+        printf("scheduler: tarefa %d selecionada com prioridade %d\n", selected->id, selected->dynamic_prio);
+    #endif
+    
+    // retorna a selecionada
+    return selected;
 }
 
 // funcao do dispatcher
@@ -147,6 +173,9 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
     // atribui valores ao descritor
     // atribui o proximo ID
     task->id = next_task_id++;
+    // define as prioridades da tarefa (default = 0)
+    task->static_prio = 0;
+    task->dynamic_prio = 0;
     // marca como pronta
     task->status = TASK_READY; 
     task->prev = NULL;
@@ -195,7 +224,7 @@ void task_exit(int exit_code) {
         printf("task_exit: tarefa %d sendo encerrada\n", current_task->id);
     #endif
 
-    // marca o status da tak como TERMINATED
+    // marca o status da task como TERMINATED
     current_task->status = TASK_TERMINATED;
 
     // se a task eh o dispatcher, entao termina o programa
@@ -226,3 +255,33 @@ void task_yield() {
     // passa o controle pro dispatcher
     task_switch(&dispatcher_task);
 }
+
+// ajusta a prioridade estatica
+void task_setprio(task_t *task, int prio) {
+    
+    // garante que a prio esta dentro dos limites
+    if (prio < -20) 
+        prio = -20;
+    else if (prio > 20) 
+        prio = 20;
+
+    // se a tarefa for nula, assume que eh a a tarefa corrente
+    if (!task)
+        task = current_task;
+
+    // define as prios da task
+    task->static_prio = prio;
+    task->dynamic_prio = prio;
+
+    #ifdef DEBUG
+        printf("task_setprio: tarefa %d prioridade setada para %d\n", task->id, prio);
+    #endif
+}
+
+// devolve o valor da prio estatica
+int task_getprio(task_t *task) {
+    if (!task)
+        task = current_task;
+    return task->static_prio;
+}
+

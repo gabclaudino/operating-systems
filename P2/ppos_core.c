@@ -1,4 +1,10 @@
+/*
 
+Nome: Gabriel Claudino de Souza
+
+GRR: 20215730
+
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,8 +51,7 @@ void ppos_init() {
 
 // inicia uma nova tarefa
 int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
-    // verificacao para ver se a task existe
-    // se nao existe, entao eh um erro e retorna -1
+    // verificacao para ver se a task eh nula
     if (!task)
         return -1;
 
