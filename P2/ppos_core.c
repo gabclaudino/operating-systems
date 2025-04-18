@@ -6,6 +6,8 @@
 #include "ppos.h"
 
 // #define DEBUG
+// Tamanho da pilha de cada tarefa
+#define STACKSIZE 64 * 1024
 
 // Variáveis globais
 task_t main_task;        // descritor da tarefa principal

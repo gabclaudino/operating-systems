@@ -13,8 +13,7 @@
 #include "ppos_data.h"
 
 // macros importantes ==========================================================
-// Tamanho da pilha de cada tarefa
-#define STACKSIZE 64 * 1024
+
 
 // habilita compatibilidade POSIX no MacOS X (para ucontext.h)
 #define _XOPEN_SOURCE 600
