@@ -13,12 +13,9 @@
 
 // variaveis globais
 
-// descritor da main
-task_t main_task;
-// tarefa em execucao     
-task_t *current_task;
-// controle dos IDs    
-int next_task_id = 0;
+task_t main_task;       // descritor da main   
+task_t *current_task;   // tarefa em execucao    
+int next_task_id = 0;   // tarefa em execucao  
 
 // inicializa o sistema
 void ppos_init() {
@@ -34,10 +31,10 @@ void ppos_init() {
     main_task.prev = NULL;
     main_task.next = NULL;
 
-    // salva o contexto atual
+    // salva o contexto atual (da main) no descritor da tarefa main
     getcontext(&(main_task.context)); 
 
-    // salva o contexto atual na variavel global
+    // define a main como tarefa atualmente em execucao
     current_task = &main_task;
 
     #ifdef DEBUG
