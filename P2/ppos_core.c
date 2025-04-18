@@ -5,28 +5,39 @@
 #include <string.h>
 #include "ppos.h"
 
-// #define DEBUG
-// Tamanho da pilha de cada tarefa
+
+// #define DEBUG // desmarcar para poder usar
+
+// tamanho da pilha de cada tarefa
 #define STACKSIZE 64 * 1024
 
-// Variáveis globais
-task_t main_task;        // descritor da tarefa principal
-task_t *current_task;    // tarefa atualmente em execução
-int next_task_id = 0;    // próximo ID a ser atribuído
+// variaveis globais
 
-// Inicializa o sistema operacional
+// descritor da main
+task_t main_task;
+// tarefa em execucao     
+task_t *current_task;
+// controle dos IDs    
+int next_task_id = 0;
+
+// inicializa o sistema
 void ppos_init() {
-    // Desativa o buffer da saída padrão
+    /* desativa o buffer da saida padrao (stdout), usado pela função printf */
     setvbuf(stdout, 0, _IONBF, 0);
 
-    // Inicializa o descritor da tarefa main
+    // inicializa o descritor da main
+    // main tem o ID = 0
     main_task.id = next_task_id++;
-    main_task.status = 0; // status 0 = pronta
+    // status 0 = pronta
+    main_task.status = 0; 
+    // ponteiros da fila
     main_task.prev = NULL;
     main_task.next = NULL;
 
-    getcontext(&(main_task.context)); // salva o contexto atual
+    // salva o contexto atual
+    getcontext(&(main_task.context)); 
 
+    // salva o contexto atual na variavel global
     current_task = &main_task;
 
     #ifdef DEBUG
@@ -35,33 +46,38 @@ void ppos_init() {
     #endif
 }
 
-// Inicializa uma nova tarefa
+// inicia uma nova tarefa
 int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
+    // verificacao para ver se a task existe
+    // se nao existe, entao eh um erro e retorna -1
     if (!task)
         return -1;
 
-    // Cria um novo contexto para a tarefa
+    // cria e salva um novo contexto para a tarefa
     getcontext(&(task->context));
 
-    // Aloca a pilha da tarefa
+    // aloca a pilha da tarefa
+    // se nao conseguir alocar, eh um erro e retorna -2
     char *stack = malloc(STACKSIZE);
     if (!stack) {
-        perror("Erro ao alocar pilha");
+        perror("Erro ao alocar pilha!");
         return -2;
     }
 
-    // Configura o contexto
+    // configura o contexto
     task->context.uc_stack.ss_sp = stack;
     task->context.uc_stack.ss_size = STACKSIZE;
     task->context.uc_stack.ss_flags = 0;
-    task->context.uc_link = 0;  // quando terminar, não retorna pra ninguém
+    task->context.uc_link = 0;  
 
-    // Prepara o contexto para iniciar a função
+    // prepara o contexto para iniciar a func
     makecontext(&(task->context), (void (*)(void))start_routine, 1, arg);
 
-    // Atribui valores ao descritor
+    // atribui valores ao descritor
+    // atribui o proximo ID
     task->id = next_task_id++;
-    task->status = 0; // pronta
+    // marca como pronta
+    task->status = 0; 
     task->prev = NULL;
     task->next = NULL;
 
@@ -69,11 +85,14 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
         printf("task_init: iniciada tarefa %d\n", task->id);
     #endif
 
+    //retorno do ID da tarefa
     return task->id;
 }
 
-// Troca o contexto para outra tarefa
+// troca o contexto para outra tarefa
 int task_switch(task_t *task) {
+
+    // verifica se a tarefa existe
     if (!task)
         return -1;
 
@@ -81,16 +100,17 @@ int task_switch(task_t *task) {
         printf("task_switch: trocando contexto %d -> %d\n", current_task->id, task->id);
     #endif
 
-
-
+    // salva a tarefa atual em uma variavel
     task_t *prev_task = current_task;
+
+    // salva a tarefa que ira receber o processador na var global
     current_task = task;
 
-    // Troca de contexto: salva o atual e carrega o novo
+    // troca de contexto, salva o atual e carrega o novo
     return swapcontext(&(prev_task->context), &(task->context));
 }
 
-// Termina a tarefa corrente
+// termina a tarefa corrente
 void task_exit(int exit_code) {
 
     #ifdef DEBUG
@@ -98,13 +118,12 @@ void task_exit(int exit_code) {
     #endif
 
 
-    // Para agora, apenas retorna à tarefa main
+    // retorna o processador para a main
     if (current_task != &main_task)
         task_switch(&main_task);
-    // (exit_code será usado futuramente)
 }
 
-// Retorna o ID da tarefa atual
+// retorna o ID da tarefa atual
 int task_id() {
     if (current_task)
         return current_task->id;
