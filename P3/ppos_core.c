@@ -147,7 +147,7 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
     task->prev = NULL;
     task->next = NULL;
 
-     // nao adiciona o dispatcher nem a main na fila de prontas
+    // adiciona se n for nem o dispatcher nem a main na fila de prontas
     if (task != &dispatcher_task && task != &main_task) {
         queue_append((queue_t **) &ready_queue, (queue_t *) task);
         user_tasks++;
