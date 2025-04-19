@@ -16,4 +16,7 @@ $(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o $(EXEC)
+	rm -f *.o
+
+purge: clean
+	rm -f $(EXEC)
