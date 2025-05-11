@@ -177,7 +177,7 @@ void ppos_init() {
     main_task.proc_start_time = 0;
     main_task.execution_time = 0;
     main_task.processor_time = 0;
-    main_task.activations = 0;
+    main_task.activations = 1;
 
     // define a main como tarefa atualmente em execucao
     current_task = &main_task;
