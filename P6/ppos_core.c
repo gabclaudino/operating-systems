@@ -89,6 +89,11 @@ void dispatcher(void *arg) {
     // remove o dispatcher da fila de prontas
     queue_remove((queue_t **) &ready_queue, (queue_t *) &dispatcher_task);
 
+    // inicializa os campos de tempo do dispatcher
+    dispatcher_task.start_time = system_ticks;
+    dispatcher_task.proc_start_time = system_ticks;
+    dispatcher_task.activations = 1;
+
     // enquanto houver tarefas de usuario para executar
     while (user_tasks > 0) {
         // o scheduler pega a proxima tarefa
@@ -129,7 +134,18 @@ void dispatcher(void *arg) {
                     break;
             }
         }
+
+        // incrementa as ativacoes do dispatcher cada vez que ele retoma o controle
+        dispatcher_task.activations++;
+        dispatcher_task.proc_start_time = system_ticks;
+
     }
+
+    // atualizar o tempo de processador do dispatcher antes de sair
+    unsigned int now = system_ticks;
+    unsigned int elapsed = now - dispatcher_task.proc_start_time;
+    dispatcher_task.processor_time += elapsed;
+
 
     #ifdef DEBUG
         printf("dispatcher: encerrando dispatcher\n");
@@ -292,14 +308,17 @@ void task_exit(int exit_code) {
         printf("task_exit: tarefa %d sendo encerrada\n", current_task->id);
     #endif
 
-    if (current_task->task_type == 0 || current_task == &dispatcher_task) {
-        unsigned int execution_time = system_ticks - current_task->start_time;
-        unsigned int processor_time = current_task->processor_time;
-        int activations = current_task->activations;
+    // atualiza o tempo de processador antes de sair
+    unsigned int now = system_ticks;
+    unsigned int elapsed = now - current_task->proc_start_time;
+    current_task->processor_time += elapsed;
 
-        printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
-               current_task->id, execution_time, processor_time, activations);
-    }
+    // imprime estatisticas para todas as tarefas, incluindo o dispatcher
+    printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
+           current_task->id, 
+           now - current_task->start_time,
+           current_task->processor_time,
+           current_task->activations);
 
     current_task->status = TASK_TERMINATED;
 
