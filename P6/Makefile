@@ -3,7 +3,7 @@ EXEC = ppos
 CC = gcc
 CFLAGS = -Wall -g
 
-OBJS = pingpong-contab.o ppos_core.o queue.o
+OBJS = pingpong-contab-prio.o ppos_core.o queue.o
 
 HEADERS = ppos.h ppos_data.h queue.h
 
