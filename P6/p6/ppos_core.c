@@ -90,8 +90,8 @@ void dispatcher(void *arg) {
     queue_remove((queue_t **) &ready_queue, (queue_t *) &dispatcher_task);
 
     // inicializa os campos de tempo do dispatcher
-    dispatcher_task.start_time = system_ticks;
-    dispatcher_task.proc_start_time = system_ticks;
+    dispatcher_task.start_time = systime();
+    dispatcher_task.proc_start_time = systime();
     dispatcher_task.activations = 1;
 
     // enquanto houver tarefas de usuario para executar
@@ -111,14 +111,14 @@ void dispatcher(void *arg) {
 
             // atualiza ativacoes e tempo de inicio
             next->activations++;
-            next->proc_start_time = system_ticks;
+            next->proc_start_time = systime();
 
             // troca o contexto para a tarefa escolhida
             task_switch(next);
             
             // quando a tarefa terminar ou fazer yield, volta pra ca
             // calcula tempo decorrido e atualiza processor_time
-            unsigned int now = system_ticks;
+            unsigned int now = systime();
             unsigned int elapsed = now - next->proc_start_time;
             next->processor_time += elapsed;
 
@@ -137,12 +137,12 @@ void dispatcher(void *arg) {
 
         // incrementa as ativacoes do dispatcher cada vez que ele retoma o controle
         dispatcher_task.activations++;
-        dispatcher_task.proc_start_time = system_ticks;
+        dispatcher_task.proc_start_time = systime();
 
     }
 
     // atualizar o tempo de processador do dispatcher antes de sair
-    unsigned int now = system_ticks;
+    unsigned int now = systime();
     unsigned int elapsed = now - dispatcher_task.proc_start_time;
     dispatcher_task.processor_time += elapsed;
 
@@ -248,7 +248,7 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
     task->next = NULL;
 
     // inicializa os campos de tempo e ativacoes
-    task->start_time = system_ticks;
+    task->start_time = systime();
     task->proc_start_time = 0;
     task->execution_time = 0;
     task->processor_time = 0;
@@ -309,7 +309,7 @@ void task_exit(int exit_code) {
     #endif
 
     // atualiza o tempo de processador antes de sair
-    unsigned int now = system_ticks;
+    unsigned int now = systime();
     unsigned int elapsed = now - current_task->proc_start_time;
     current_task->processor_time += elapsed;
 
