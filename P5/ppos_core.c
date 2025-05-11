@@ -212,10 +212,10 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
 
     // tipo
     if(task == &dispatcher_task || task == &main_task) {
-        task_type = 1;
+        task->task_type = 1;
     }
     else {
-        task_type = 0;
+        task->task_type = 0;
     }
 
     // tempo de quantum
@@ -223,7 +223,7 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
 
 
     // adiciona se n for nem o dispatcher nem a main na fila de prontas
-    if (task_type == 0) {
+    if (task->task_type == 0) {
         queue_append((queue_t **) &ready_queue, (queue_t *) task);
         user_tasks++;
     }
