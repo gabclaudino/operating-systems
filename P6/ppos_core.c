@@ -24,18 +24,12 @@ task_t dispatcher_task;        // tarefa do dispatcher
 task_t *ready_queue = NULL;    // fila de tarefas prontas
 int next_task_id = 0;          // prox ID disponivel
 int user_tasks = 0;            // numero de tarefas de usuario ativas
-unsigned int global_clock = 0; // relogio do sistema em ms
-
-// retorna o relógio atual (em milisegundos)
-unsigned int systime(){
-    return global_clock = 0;
-}
+unsigned int system_ticks = 0; // ticks do relogio
 
 // tratador do sinal de temporizador
 void tick_handler(int signum) {
-    // incremento do relogio
-    global_clock++;
-
+    // incrementa os ticks do relogio
+    system_ticks++;
     // se a tarefa atual for de usuario, decrementa o quantum
     if (current_task && current_task->task_type == 0) {
         current_task->quantum--;
@@ -110,15 +104,19 @@ void dispatcher(void *arg) {
             // define o status como RUNNING
             next->status = TASK_RUNNING;
 
-            // incrementa o contador de ativacoes
+            // atualiza ativacoes e tempo de inicio
             next->activations++;
-            // salva início da ativação
-            next->proc_start_time = systime(); 
-        
+            next->proc_start_time = system_ticks;
+
             // troca o contexto para a tarefa escolhida
             task_switch(next);
-
+            
             // quando a tarefa terminar ou fazer yield, volta pra ca
+            // calcula tempo decorrido e atualiza processor_time
+            unsigned int now = system_ticks;
+            unsigned int elapsed = now - next->proc_start_time;
+            next->processor_time += elapsed;
+
             switch (next->status) {
                 // se ela esta pronta, volta pro final da fila
                 case TASK_READY:
@@ -150,14 +148,20 @@ void ppos_init() {
     // salva o contexto atual (da main) no descritor da tarefa main
     getcontext(&(main_task.context));
 
-    // inicializa o descritor da main
-    // main tem o ID = 0
+    // inicializacao da task main
     main_task.id = next_task_id++;
-    // define o status como executando
     main_task.status = TASK_RUNNING;
-    // ponteiros da fila
     main_task.prev = NULL;
     main_task.next = NULL;
+    main_task.static_prio = 0;
+    main_task.dynamic_prio = 0;
+    main_task.quantum = 0;
+    main_task.task_type = 1;
+    main_task.start_time = 0;
+    main_task.proc_start_time = 0;
+    main_task.execution_time = 0;
+    main_task.processor_time = 0;
+    main_task.activations = 0;
 
     // define a main como tarefa atualmente em execucao
     current_task = &main_task;
@@ -214,16 +218,25 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
     // prepara o contexto para iniciar a func
     makecontext(&(task->context), (void (*)(void))start_routine, 1, arg);
 
-    // atribui valores ao descritor
     // atribui o proximo ID
     task->id = next_task_id++;
+
     // define as prioridades da tarefa (default = 0)
     task->static_prio = 0;
     task->dynamic_prio = 0;
+
     // marca como pronta
     task->status = TASK_READY; 
+
     task->prev = NULL;
     task->next = NULL;
+
+    // inicializa os campos de tempo e ativacoes
+    task->start_time = system_ticks;
+    task->proc_start_time = 0;
+    task->execution_time = 0;
+    task->processor_time = 0;
+    task->activations = 0;
 
     // tipo
     if(task == &dispatcher_task || task == &main_task) {
@@ -275,31 +288,25 @@ int task_switch(task_t *task) {
 
 // termina a tarefa corrente
 void task_exit(int exit_code) {
-
     #ifdef DEBUG
         printf("task_exit: tarefa %d sendo encerrada\n", current_task->id);
     #endif
 
-    // marca o status da task como TERMINATED
+    if (current_task->task_type == 0 || current_task == &dispatcher_task) {
+        unsigned int execution_time = system_ticks - current_task->start_time;
+        unsigned int processor_time = current_task->processor_time;
+        int activations = current_task->activations;
+
+        printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
+               current_task->id, execution_time, processor_time, activations);
+    }
+
     current_task->status = TASK_TERMINATED;
 
-    // pega o tempo atual
-    unsigned int now = systime();
-
-    // tempo de execucao da task
-    task->execution_time = now - task->start_time;
-    // tempo de processador
-    task->processor_time += now - task->proc_start_time;
-
-    printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations\n",
-    task->id, task->execution_time, task->processor_time, task->activations);
-
-
-    // se a task eh o dispatcher, entao termina o programa
     if (current_task == &dispatcher_task) {
         exit(0);
     } else {
-        task_switch(&dispatcher_task); // se nao manda para o dispatcher
+        task_switch(&dispatcher_task);
     }
 }
 
@@ -351,5 +358,9 @@ int task_getprio(task_t *task) {
     if (!task)
         task = current_task;
     return task->static_prio;
+}
+
+unsigned int systime() {
+    return system_ticks;
 }
 
