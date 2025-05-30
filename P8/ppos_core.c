@@ -349,10 +349,12 @@ void task_exit (int exit_code)
     // acorda todas as tarefas que estavam aguardando (joiners)
     wake_joiners(current_task);
 
-    // se for o dispatcher, encerra o processo 
+    // se for o dispatcher, volta para a main
     // senao, retorna ao dispatcher
     if (current_task == &dispatcher_task) {
-        exit(0);
+        // termina o dispatcher, retorna a main para ela fechar tudo
+        current_task->status = TASK_TERMINATED;
+        task_switch(&main_task);
     }
     else {
         task_switch(&dispatcher_task);
