@@ -26,14 +26,14 @@ int next_task_id = 0;          // prox ID disponivel
 int user_tasks = 0;            // numero de tarefas de usuario ativas
 unsigned int system_ticks = 0; // ticks do relogio
 
-// forward-declare helper to wake all joining tasks
-static void wake_joiners(task_t *task) {
+// acorda tarefas que estavam esperando
+static void wake_joiners(task_t *tcb)
+{
     task_t *t;
-    while (task->join_queue) {
-        t = task->join_queue;
-        task->join_queue = t->next;
-        t->next = t->prev = NULL;
-        // mark ready and enqueue
+    while ((t = tcb->join_queue)) {
+        // retira o head da fila de quem espera por 'tcb'
+        queue_remove((queue_t **)&tcb->join_queue, (queue_t *)t);
+        // acorda essa tarefa
         t->status = TASK_READY;
         queue_append((queue_t **)&ready_queue, (queue_t *)t);
     }
@@ -278,6 +278,9 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg) {
     // tempo de quantum
     task->quantum = QUANTUM_TICKS;
 
+    // fila de tasks esperando essa acabar
+    task->join_queue = NULL;
+
 
     // adiciona se n for nem o dispatcher nem a main na fila de prontas
     if (task->task_type == 0) {
@@ -448,12 +451,6 @@ int task_wait(task_t *task) {
     // se a task for NULL ou estiver TERMINADA, retorna erro
     if (!task || task->status == TASK_TERMINATED)
         return -1;
-
-    // inicializacao de securanca
-    current_task->next = current_task->prev = NULL;
-
-    // coloca a task corrente na fila de quem espra essa task 
-    queue_append((queue_t **)&task->join_queue, (queue_t *)current_task);
     
     // suspende a tarefa atual
     task_suspend(&task->join_queue);
