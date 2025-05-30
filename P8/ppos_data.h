@@ -22,9 +22,10 @@ GRR: 20215730
 #define QUANTUM_TICKS 20        // quantum padrão (20 ms)          
 
 // estados das tarefas
-#define TASK_READY     0
-#define TASK_RUNNING   1
+#define TASK_READY      0
+#define TASK_RUNNING    1
 #define TASK_TERMINATED 2
+#define TASK_SUSPENDED  3
 
 
 
