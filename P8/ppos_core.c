@@ -353,12 +353,13 @@ void task_exit (int exit_code)
     // senao, retorna ao dispatcher
     if (current_task == &dispatcher_task) {
         // termina o dispatcher, retorna a main para ela fechar tudo
+        if(current_task->status == TASK_TERMINATED)
+            exit(0);
+        
         current_task->status = TASK_TERMINATED;
         task_switch(&main_task);
     }
     else {
-        if (&dispatcher_task->status == TASK_TERMINATED)
-            exit(0);
         task_switch(&dispatcher_task);
     }
 }
