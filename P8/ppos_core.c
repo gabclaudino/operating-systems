@@ -357,6 +357,8 @@ void task_exit (int exit_code)
         task_switch(&main_task);
     }
     else {
+        if (dispatcher_task->status == TERMINATED)
+            exit(0);
         task_switch(&dispatcher_task);
     }
 }
