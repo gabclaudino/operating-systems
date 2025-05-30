@@ -184,8 +184,8 @@ void ppos_init() {
     main_task.next = NULL;
     main_task.static_prio = 0;
     main_task.dynamic_prio = 0;
-    main_task.quantum = 0;
-    main_task.task_type = 1;
+    main_task.quantum = QUANTUM_TICKS;
+    main_task.task_type = 0;
     main_task.start_time = 0;
     main_task.proc_start_time = 0;
     main_task.execution_time = 0;
