@@ -126,6 +126,9 @@ void dispatcher(void *arg) {
             next->activations++;
             next->proc_start_time = systime();
 
+            // reseta o quantum
+            next->quantum = QUANTUM_TICKS; 
+
             // troca o contexto para a tarefa escolhida
             task_switch(next);
             
