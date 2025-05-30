@@ -333,30 +333,38 @@ void task_exit (int exit_code)
     unsigned int elapsed = now - current_task->proc_start_time;
     current_task->processor_time += elapsed;
 
-    // imprime estatisticas da tarefa (incluindo dispatcher)
-    printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations\n",
-           current_task->id,
-           now - current_task->start_time,
-           current_task->processor_time,
-           current_task->activations);
-
-    // armazena o codigo de saida para quem chamou task_wait()
+    // armazena o exit_code
     current_task->exit_code = exit_code;
+    // marca como TERMINATED
+    current_task->status    = TASK_TERMINATED;
 
-    // marca a tarefa como TERMINATED
-    current_task->status = TASK_TERMINATED;
-
-    // acorda todas as tarefas que estavam aguardando (joiners)
+    // acorda quem estiver esperando (para qualquer tarefa)
     wake_joiners(current_task);
 
-    // se for o dispatcher, volta para a main
-    // senao, retorna ao dispatcher
+    // se a task eh o dispatcher dando exit
     if (current_task == &dispatcher_task) {
-        // termina o dispatcher, retorna a main para ela fechar tudo
-        current_task->status = TASK_TERMINATED;
+        // devolve o controle ao main para que ele finalize tudo
         task_switch(&main_task);
+
+        // quando o main fizer task_exit(0) e der
+        // switch de volta para o dispatcher, imprime as estatisticas
+        printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations\n",
+               dispatcher_task.id,
+               now - dispatcher_task.start_time,
+               dispatcher_task.processor_time,
+               dispatcher_task.activations);
+        // encerra o processo
+        exit(0);
     }
     else {
+        // caso eh uma user task
+        printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations\n",
+               current_task->id,
+               now - current_task->start_time,
+               current_task->processor_time,
+               current_task->activations);
+               
+        // volta ao dispatcher
         task_switch(&dispatcher_task);
     }
 }
