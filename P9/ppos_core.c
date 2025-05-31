@@ -186,10 +186,10 @@ void dispatcher(void *arg) {
                     user_tasks--;
                     break;
             }
+            dispatcher_task.activations++;
         }
 
         // incrementa as ativacoes do dispatcher cada vez que ele retoma o controle
-        dispatcher_task.activations++;
         dispatcher_task.proc_start_time = systime();
 
     }
