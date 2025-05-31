@@ -41,25 +41,38 @@ static void wake_joiners(task_t *tcb)
 }
 
 // verifica todos os sleepers e acorda os que ja devem retornar a fila de prontas
+// verifica todos os sleepers e acorda os que já devem retornar a ready_queue
 static void check_sleepers()
 {
     if (!sleeping_queue)
         return;
 
     unsigned int now = systime();
-    task_t *t = sleeping_queue;
-    task_t *start = t;
+    // 'head' aponta para a cabeça original da lista circular
+    task_t *head = sleeping_queue;
+    task_t *t = head;
 
     do {
-        // guarda o proximo agora, pois t pode ser removida abaixo
-        task_t *next = t->next;  
+        task_t *next = t->next;  // guardamos o próximo antes de potencial remoção
+
         if (t->wake_time <= now) {
-            // se for hora de acordar, remove t de sleeping_queue e o acorda
+            // se for hora de acordar, removemos 't' de sleeping_queue e o acordamos
             task_awake(t, &sleeping_queue);
+
+            // se 't' era a cabeça original, atualizamos 'head' para a nova sleeping_queue
+            if (t == head) {
+                head = sleeping_queue;
+                // se a fila tornou-se vazia, encerramos agora
+                if (!head)
+                    break;
+            }
         }
+
         t = next;
-    } while (t != start);
+        // repete até voltar à cabeça atual (ou até a fila esvaziar)
+    } while (head && t != head);
 }
+
 
 
 // tratador do sinal de temporizador
