@@ -41,39 +41,36 @@ static void wake_joiners(task_t *tcb)
 }
 
 // verifica todos os sleepers e acorda os que ja devem retornar a fila de prontas
-// verifica todos os sleepers e acorda os que já devem retornar a ready_queue
 static void check_sleepers()
 {
     if (!sleeping_queue)
         return;
 
     unsigned int now = systime();
-    // 'head' aponta para a cabeça original da lista circular
+    // head aponta para a cabeca original da lista
     task_t *head = sleeping_queue;
     task_t *t = head;
 
     do {
-        task_t *next = t->next;  // guardamos o próximo antes de potencial remoção
+        task_t *next = t->next;  
 
         if (t->wake_time <= now) {
-            // se for hora de acordar, removemos 't' de sleeping_queue e o acordamos
+            // se for hora de acordar, removemove t de sleeping_queue e o acorda
             task_awake(t, &sleeping_queue);
 
-            // se 't' era a cabeça original, atualizamos 'head' para a nova sleeping_queue
+            // se t era a cabeca original, atualiza head para a nova sleeping_queue
             if (t == head) {
                 head = sleeping_queue;
-                // se a fila tornou-se vazia, encerramos agora
+                // se a fila ficou vazia, encerra
                 if (!head)
                     break;
             }
         }
 
         t = next;
-        // repete até voltar à cabeça atual (ou até a fila esvaziar)
+        // repete ate voltar a cabeça atual ou ate a fila esvaziar
     } while (head && t != head);
 }
-
-
 
 // tratador do sinal de temporizador
 void tick_handler(int signum) {
@@ -388,7 +385,7 @@ void task_exit (int exit_code)
 
         // quando o main fizer task_exit(0) e der
         // switch de volta para o dispatcher, imprime as estatisticas
-        printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations\n",
+        printf("Task %d exit: running time %u ms, cpu time %u ms, %d activations\n",
                dispatcher_task.id,
                now - dispatcher_task.start_time,
                dispatcher_task.processor_time,
@@ -398,7 +395,7 @@ void task_exit (int exit_code)
     }
     else {
         // caso eh uma user task
-        printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations\n",
+        printf("Task %d exit: running time %u ms, cpu time %u ms, %d activations\n",
                current_task->id,
                now - current_task->start_time,
                current_task->processor_time,
@@ -525,7 +522,7 @@ void task_sleep (int t){
     // suspende a task atual, colocando-a em sleeping_queue
     task_suspend(&sleeping_queue);
 
-    // quando voltar para cá, a tarefa já foi acordada pelo dispatcher
+    // quando voltar para ca, a task ja foi acordada pelo dispatcher
 }
 
 
